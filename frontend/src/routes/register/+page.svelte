@@ -49,7 +49,7 @@
         draggable="false"
       >
     </div>
-    <h2 class="text-2xl font-bold text-white mb-2 text-center">Create your Zentry account</h2>
+    <h2 class="text-2xl font-bold text-white mb-2 text-center">Create your AQuest account</h2>
     {#if error}
       <div class="bg-red-500/20 text-red-300 rounded p-2 text-center">{error}</div>
     {/if}

@@ -42,7 +42,7 @@
 </script>
 
 <svelte:head>
-  <title>Dashboard - Zentry</title>
+  <title>Dashboard - AQuest</title>
 </svelte:head>
 
 <div class="space-y-6">

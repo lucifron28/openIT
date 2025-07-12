@@ -122,7 +122,7 @@
 						id: 1,
 						name: 'Team Discord Notifications',
 						webhook_type: 'discord',
-						webhook_url: 'https://discord.com/api/webhooks/CHANNEL_ID/TOKEN',
+						webhook_url: 'http://127.0.0.1:8000/api/gamification/test-webhook/',
 						project: 1,
 						project_name: 'Main Project',
 						event_types: ['task_completed', 'badge_earned'],

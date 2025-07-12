@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { ai } from '$lib/ai';
 	
 	let messages = [
 		{
@@ -51,28 +52,28 @@
 			type: 'streak',
 			icon: '🔥',
 			title: 'Streak Reminder',
-			message: 'You\'re on a 5-day streak! Complete one more task today to keep it going.',
+			message: ai.generateInsight('streak'),
 			priority: 'high'
 		},
 		{
 			type: 'team',
 			icon: '👥',
 			title: 'Team Check-in',
-			message: 'Sarah from UI/UX hasn\'t been active lately. Maybe check in with her?',
+			message: ai.generateInsight('team'),
 			priority: 'medium'
 		},
 		{
 			type: 'productivity',
 			icon: '📊',
 			title: 'Productivity Tip',
-			message: 'You\'re most productive in the morning. Try scheduling complex tasks between 9-11 AM.',
+			message: ai.generateInsight('productivity'),
 			priority: 'low'
 		},
 		{
 			type: 'achievement',
 			icon: '🏆',
 			title: 'Achievement Available',
-			message: 'You\'re close to earning the "Task Master" badge! Complete 3 more tasks.',
+			message: ai.generateInsight('achievement'),
 			priority: 'medium'
 		}
 	];
@@ -81,28 +82,48 @@
 		if (!currentMessage.trim()) return;
 		
 		// Add user message
+		const userMsg = currentMessage.trim();
 		messages = [...messages, {
 			id: Date.now(),
 			type: 'user',
-			content: currentMessage,
+			content: userMsg,
 			timestamp: new Date()
 		}];
 		
-		const userMsg = currentMessage;
 		currentMessage = '';
 		isTyping = true;
 		
-		// Simulate AI response
-		setTimeout(() => {
-			const aiResponse = generateAIResponse(userMsg);
-			messages = [...messages, {
-				id: Date.now(),
-				type: 'ai',
-				content: aiResponse,
-				timestamp: new Date()
-			}];
-			isTyping = false;
-		}, 1500);
+		// Get AI response with more realistic timing
+		const startTime = Date.now();
+		ai.generateResponse(userMsg, messages)
+			.then(aiResponse => {
+				// Ensure minimum response time for better UX (simulate thinking)
+				const elapsed = Date.now() - startTime;
+				const minDelay = ai.API_KEY === 'your-openai-api-key-here' ? 1000 : 500;
+				const remainingDelay = Math.max(0, minDelay - elapsed);
+				
+				setTimeout(() => {
+					messages = [...messages, {
+						id: Date.now() + 1,
+						type: 'ai',
+						content: aiResponse,
+						timestamp: new Date()
+					}];
+					isTyping = false;
+				}, remainingDelay);
+			})
+			.catch(error => {
+				console.error('AI Error:', error);
+				setTimeout(() => {
+					messages = [...messages, {
+						id: Date.now() + 1,
+						type: 'ai',
+						content: "I apologize, but I'm having trouble connecting to my AI services right now. Please check that your API key is configured correctly, or try again later. In the meantime, I'm here to help with any productivity questions you might have! 🤖",
+						timestamp: new Date()
+					}];
+					isTyping = false;
+				}, 800);
+			});
 	}
 	
 	function useSuggestedPrompt(prompt: string) {
@@ -110,16 +131,37 @@
 		sendMessage();
 	}
 	
-	function generateAIResponse(userMessage: string) {
-		const responses = [
-			"Great question! Based on your current progress, I'd recommend focusing on high-priority tasks that align with your team's goals. Let me break this down for you... 🎯",
-			"I've analyzed your productivity patterns, and here's what I found: You tend to be most effective when you tackle challenging tasks early in the day. Consider blocking your calendar for deep work! 📊",
-			"That's an excellent goal! To maintain your momentum, I suggest setting micro-milestones. Small wins lead to big achievements! 🚀",
-			"I notice you're doing fantastic with consistency! Your streak shows real dedication. To keep it up, try the 2-minute rule: if a task takes less than 2 minutes, do it now! ⚡",
-			"Team collaboration is key to success! I recommend scheduling regular check-ins and celebrating small wins together. Recognition boosts morale! 👥"
+	function refreshInsights() {
+		insights = [
+			{
+				type: 'streak',
+				icon: '🔥',
+				title: 'Streak Reminder',
+				message: ai.generateInsight('streak'),
+				priority: 'high'
+			},
+			{
+				type: 'team',
+				icon: '👥',
+				title: 'Team Check-in',
+				message: ai.generateInsight('team'),
+				priority: 'medium'
+			},
+			{
+				type: 'productivity',
+				icon: '📊',
+				title: 'Productivity Tip',
+				message: ai.generateInsight('productivity'),
+				priority: 'low'
+			},
+			{
+				type: 'achievement',
+				icon: '🏆',
+				title: 'Achievement Available',
+				message: ai.generateInsight('achievement'),
+				priority: 'medium'
+			}
 		];
-		
-		return responses[Math.floor(Math.random() * responses.length)];
 	}
 	
 	function formatTime(timestamp: Date) {
@@ -161,17 +203,55 @@
 			<p class="text-slate-400 mt-1">Your personal productivity assistant</p>
 		</div>
 		
-		<div class="flex items-center gap-2">
-			<div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-			<span class="text-green-400 text-sm font-medium">Online</span>
+		<div class="flex items-center gap-4">
+			<!-- AI Status -->
+			<div class="flex items-center gap-2">
+				{#if ai.API_KEY === 'your-openai-api-key-here'}
+					<div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+					<span class="text-yellow-400 text-sm font-medium">Demo Mode</span>
+				{:else}
+					<div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+					<span class="text-green-400 text-sm font-medium">AI Connected</span>
+				{/if}
+			</div>
 		</div>
 	</div>
 
+	<!-- API Configuration Notice -->
+	{#if ai.API_KEY === 'your-openai-api-key-here'}
+		<div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
+			<div class="flex items-start gap-3">
+				<span class="text-2xl">⚙️</span>
+				<div class="flex-1">
+					<h3 class="font-semibold text-yellow-400 mb-2">AI Demo Mode Active</h3>
+					<p class="text-yellow-200 text-sm mb-3">
+						You're currently using fallback responses. To enable full AI capabilities:
+					</p>
+					<ol class="text-yellow-200 text-sm space-y-1 ml-4 list-decimal">
+						<li>Get an OpenAI API key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-yellow-300 hover:underline">platform.openai.com</a></li>
+						<li>Copy <code class="bg-yellow-500/20 px-1 rounded">.env.example</code> to <code class="bg-yellow-500/20 px-1 rounded">.env.local</code></li>
+						<li>Set <code class="bg-yellow-500/20 px-1 rounded">VITE_OPENAI_API_KEY=your-actual-key</code></li>
+						<li>Restart the development server</li>
+					</ol>
+				</div>
+			</div>
+		</div>
+	{/if}
+
 	<!-- AI Insights -->
 	<div class="bg-gradient-to-br from-purple-500/10 to-teal-500/10 rounded-xl p-6 border border-purple-500/30">
-		<h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-			💡 Current Insights
-		</h2>
+		<div class="flex items-center justify-between mb-4">
+			<h2 class="text-xl font-semibold text-white flex items-center gap-2">
+				💡 Current Insights
+			</h2>
+			<button 
+				on:click={refreshInsights}
+				class="px-3 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-sm transition-colors flex items-center gap-1"
+				title="Refresh insights"
+			>
+				🔄 Refresh
+			</button>
+		</div>
 		
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			{#each insights as insight}

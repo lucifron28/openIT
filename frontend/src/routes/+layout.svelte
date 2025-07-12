@@ -1,5 +1,5 @@
 <script lang="ts">
-  import '../App.css';
+  import '../app.css';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -56,10 +56,10 @@
             <h1 class="text-xl font-semibold text-white">
               {#if $page.route.id === '/'} Dashboard
               {:else if $page.route.id === '/tasks'} Tasks
-              {:else if $page.route.id === '/team'} Team
+              {:else if $page.route.id === '/team'} Projects
               {:else if $page.route.id === '/achievements'} Achievements
               {:else if $page.route.id === '/coach'} AI Coach
-              {:else} Zentry
+              {:else} AQuest
               {/if}
             </h1>
           </div>
