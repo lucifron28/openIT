@@ -56,5 +56,72 @@ Authorization: Bearer <Insert Access Token Here>
 
 ### Test Refresh token endpoint
 POST http://127.0.0.1:8000/api/users/token/refresh/
-Cookie: refresh_token=<Insert Refresh Token Here>
+Cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1NDkwNDI5OCwiaWF0IjoxNzUyMzEyMjk4LCJqdGkiOiIyZDAyNTA3YTIyZmU0YzY3OTM2OGMzNWQxYzAzODEwYiIsInVzZXJfaWQiOjN9.ZXVvBR0G8kj3l5gcMcZOth44jwxIXSPFFsqJWC08pDw
 Content-Type: application/json
+
+
+### Test Project Creation
+POST http://127.0.0.1:8000/api/projects/projects/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzA5MjEwLCJpYXQiOjE3NTIzMDgzMTAsImp0aSI6ImMyZTlmMjFmZTVmNTRiZDNhZWE5MGZlZWYyZTVlNDA4IiwidXNlcl9pZCI6M30.89VKYBlpfS9Lw-h9TD6ODD9ozJEgk3xB12obI4TnZoc
+
+{
+    "name": "Full Stack App",
+    "description": "Create full-stack app",
+    "owner": 3
+}
+
+### Assign a user to the project
+POST http://127.0.0.1:8000/api/projects/projects/1/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzEzMTk4LCJpYXQiOjE3NTIzMTIyOTgsImp0aSI6ImUwNzRmMzVjZTVlOTRhNWFhZTViYTUzMjcyYmNhNjk1IiwidXNlcl9pZCI6M30.enAkPD-rm7ZDc6rxaNiKQC9yuk1NgMqk2uDalMFaskA 
+
+{
+    "user_id": 3
+}
+### Get all tasks within a project
+POST http://127.0.0.1:8000/api/projects/tasks/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzA2ODA5LCJpYXQiOjE3NTIzMDU5MDksImp0aSI6IjZhNWUyMTY5NDk5ODQ3ZWI5Yjk1OWNjY2NiY2YyOTcyIiwidXNlcl9pZCI6M30.mfNbM8i_35AbaAO5CmmnutPxdKBemiTGKDLdQSMcnCY
+
+{
+    "name": "Task 1",
+    "description": "Create the frontend",
+    "project": 1,
+    "status": "in_progress",
+    "priority": "low"
+}
+
+
+### Get all the tasks base on Project ID 
+GET http://127.0.0.1:8000/api/projects/tasks/?project=1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzEzNjQ1LCJpYXQiOjE3NTIzMTIyOTgsImp0aSI6ImM1Y2JjMWYxMzJjMTQ5M2I5NTA4ZDY3ZjUzN2M3Mzg4IiwidXNlcl9pZCI6M30.M-L4d4poH1it7pFbxHIRdYCpM66xstyxOZ4KbNe51V0
+
+
+### Get all the users projects
+GET http://127.0.0.1:8000/api/projects/projects/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzA5MjEwLCJpYXQiOjE3NTIzMDgzMTAsImp0aSI6ImMyZTlmMjFmZTVmNTRiZDNhZWE5MGZlZWYyZTVlNDA4IiwidXNlcl9pZCI6M30.89VKYBlpfS9Lw-h9TD6ODD9ozJEgk3xB12obI4TnZoc
+
+
+### add task to project <id>
+POST http://127.0.0.1:8000/api/projects/tasks/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzEzNjQ1LCJpYXQiOjE3NTIzMTIyOTgsImp0aSI6ImM1Y2JjMWYxMzJjMTQ5M2I5NTA4ZDY3ZjUzN2M3Mzg4IiwidXNlcl9pZCI6M30.M-L4d4poH1it7pFbxHIRdYCpM66xstyxOZ4KbNe51V0
+
+{
+    "name": "Task 2",
+    "description": "Create the backend",
+    "status": "not_started",
+    "priority": "high"
+}
+
+###
+POST http://127.0.0.1:8000/api/projects/projects/1/assign_member/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzE0OTg4LCJpYXQiOjE3NTIzMTIyOTgsImp0aSI6IjUyMzhjYjEzOGFmOTRmNGQ4ZWU3Zjk5MDI1OWNkNWRjIiwidXNlcl9pZCI6M30.Owrz7xcOTbwrsAeme9h0Zv4K_eQrFrLh-jztuZ2T0VE
+
+{
+    "user_id": 3
+}
