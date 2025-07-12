@@ -134,14 +134,14 @@
 
 <div class="space-y-8">
 	<div class="flex justify-between items-center mb-2">
-		<h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">Teams</h1>
-		<button on:click={() => showAddTeam = true} class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-5 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-teal-600">Add Team</button>
+		<h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">Projects</h1>
+		<button on:click={() => showAddTeam = true} class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-5 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-teal-600">Add Project</button>
 	</div>
 
 	{#if loading}
 		<div class="text-center text-slate-400 py-8">Loading teams…</div>
 	{:else if !teams.length}
-		<div class="text-center text-slate-400 py-8">No teams found.</div>
+		<div class="text-center text-slate-400 py-8">No projects found.</div>
 	{:else}
 		<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 			{#each teams as team}
@@ -186,7 +186,7 @@
 {#if showAddTeam}
 	<div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" tabindex="0" aria-modal="true" on:click={() => showAddTeam = false}>
 		<div class="bg-gradient-to-br from-slate-800 to-slate-700 p-6 rounded-xl border border-slate-600 w-full max-w-md mx-4" on:click|stopPropagation>
-			<h2 class="text-xl font-bold text-white mb-4">Add Team</h2>
+			<h2 class="text-xl font-bold text-white mb-4">Add Project</h2>
 			<form on:submit|preventDefault={addTeam} class="space-y-4">
 				<div>
 					<label class="block text-slate-300 mb-1">Name</label>

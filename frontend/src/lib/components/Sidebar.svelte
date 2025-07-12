@@ -6,7 +6,7 @@
   const navigation = [
     { name: 'Dashboard', href: '/', icon: '📊', emoji: '🏠' },
     { name: 'Tasks', href: '/tasks', icon: '📝', emoji: '✅' },
-    { name: 'Team', href: '/team', icon: '👥', emoji: '🤝' },
+    { name: 'Projects', href: '/team', icon: '👥', emoji: '🤝' },
     { name: 'Achievements', href: '/achievements', icon: '🏆', emoji: '🎖️' },
     { name: 'AI Coach', href: '/coach', icon: '🤖', emoji: '💡' },
     { name: 'Settings', href: '/settings', icon: '⚙️', emoji: '🔧' },
