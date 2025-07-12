@@ -94,7 +94,6 @@
 		{ value: 'locked', label: 'Locked', emoji: '🔒' }
 	];
 	
-	// Filter badges based on selected category
 	$: filteredBadges = (() => {
 		const allBadges = [...userBadges, ...availableBadges];
 		

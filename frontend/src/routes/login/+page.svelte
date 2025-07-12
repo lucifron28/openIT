@@ -36,8 +36,17 @@
 </svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
-  <form class="glass rounded-xl p-8 w-full max-w-md space-y-6 animate-fade-in-up" on:submit|preventDefault={handleLogin}>
-    <h2 class="text-2xl font-bold text-white mb-2 text-center">Login to Zentry</h2>
+
+    <form class="glass rounded-xl p-8 w-full max-w-md space-y-6 animate-fade-in-up" on:submit|preventDefault={handleLogin}>
+    <div class="flex justify-center">
+        <img
+        src="../src/assets/aquest-logo.png"
+        alt="Aquest Logo"
+        class="w-50 h-50 rounded-lg object-cover"
+        draggable="false"
+        >
+    </div>
+    <h2 class="text-2xl font-bold text-white mb-2 text-center">Login to AQuest</h2>
     {#if error}
       <div class="bg-red-500/20 text-red-300 rounded p-2 text-center">{error}</div>
     {/if}

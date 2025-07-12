@@ -1,34 +1,43 @@
 <script>
   import { onMount } from 'svelte';
-  
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
   let user = {
-    name: 'Ron Vincent Cada',
-    level: 3,
-    experience: 250,
-    experienceToNext: 500,
-    currentStreak: 5,
+    name: '...',
+    level: 1,
+    experience: 0,
+    experienceToNext: 100,
+    currentStreak: 0,
     avatar: '🧑‍💻'
   };
-  
-  let taskStats = {
-    todo: 8,
-    inProgress: 3,
-    completed: 15
-  };
-  
-  let currentProject = {
-    name: 'Zentry Development',
-    emoji: '🚀',
-    progress: 65
-  };
-  
+
+  onMount(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me/`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        user = {
+          ...user,
+          name: data.username || 'User',
+          avatar: data.avatar || '🧑‍💻',
+          level: data.level ?? 1,
+          experience: data.experience ?? 0,
+          experienceToNext: data.experienceToNext ?? 100,
+          currentStreak: data.currentStreak ?? 0
+        };
+      }
+    } catch {}
+  });
+
+  let taskStats = { todo: 8, inProgress: 3, completed: 15 };
+  let currentProject = { name: 'Zentry Development', emoji: '🚀', progress: 65 };
   let recentActivity = [
     { action: 'Completed task', task: 'Set up authentication', time: '2 hours ago', emoji: '✅' },
     { action: 'Started task', task: 'Design dashboard UI', time: '4 hours ago', emoji: '🎨' },
     { action: 'Earned badge', task: 'Task Master', time: '1 day ago', emoji: '🏆' },
-    { action: 'Level up!', task: 'Reached Level 3', time: '2 days ago', emoji: '🌟' },
+    { action: 'Level up!', task: 'Reached Level 3', time: '2 days ago', emoji: '🌟' }
   ];
-  
+
   $: experiencePercentage = (user.experience / user.experienceToNext) * 100;
 </script>
 
@@ -37,7 +46,6 @@
 </svelte:head>
 
 <div class="space-y-6">
-  <!-- Welcome Section -->
   <div class="glass rounded-xl p-6 animate-fade-in-up">
     <div class="flex items-center justify-between">
       <div>
@@ -49,10 +57,8 @@
       <div class="text-6xl animate-bounce-slow">{user.avatar}</div>
     </div>
   </div>
-  
-  <!-- Stats Grid -->
+
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <!-- Level Progress -->
     <div class="glass rounded-xl p-6 animate-fade-in-up">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-white">Level Progress</h3>
@@ -72,8 +78,7 @@
         <p class="text-sm text-gray-400">{user.experienceToNext - user.experience} XP to next level</p>
       </div>
     </div>
-    
-    <!-- Current Streak -->
+
     <div class="glass rounded-xl p-6 animate-fade-in-up">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-white">Current Streak</h3>
@@ -85,8 +90,7 @@
         <p class="text-sm text-gray-400 mt-2">Keep it up! 💪</p>
       </div>
     </div>
-    
-    <!-- Active Project -->
+
     <div class="glass rounded-xl p-6 animate-fade-in-up">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-white">Active Project</h3>
@@ -106,8 +110,7 @@
         </div>
       </div>
     </div>
-    
-    <!-- Task Summary -->
+
     <div class="glass rounded-xl p-6 animate-fade-in-up">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-white">Task Status</h3>
@@ -129,8 +132,7 @@
       </div>
     </div>
   </div>
-  
-  <!-- Recent Activity -->
+
   <div class="glass rounded-xl p-6 animate-fade-in-up">
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-xl font-semibold text-white">Recent Activity</h3>
@@ -153,8 +155,7 @@
       {/each}
     </div>
   </div>
-  
-  <!-- Quick Actions -->
+
   <div class="glass rounded-xl p-6 animate-fade-in-up">
     <h3 class="text-xl font-semibold text-white mb-6">Quick Actions</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -167,7 +168,6 @@
           </div>
         </div>
       </button>
-      
       <button class="btn-glow-teal bg-gradient-to-r from-teal-500/20 to-purple-500/20 border border-teal-500/30 rounded-lg p-4 text-left hover:bg-gradient-to-r hover:from-teal-500/30 hover:to-purple-500/30 transition-all">
         <div class="flex items-center space-x-3">
           <span class="text-2xl">👥</span>
@@ -177,7 +177,6 @@
           </div>
         </div>
       </button>
-      
       <button class="btn-glow bg-gradient-to-r from-purple-500/20 to-teal-500/20 border border-purple-500/30 rounded-lg p-4 text-left hover:bg-gradient-to-r hover:from-purple-500/30 hover:to-teal-500/30 transition-all">
         <div class="flex items-center space-x-3">
           <span class="text-2xl">🤖</span>

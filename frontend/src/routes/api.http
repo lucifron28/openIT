@@ -1,0 +1,249 @@
+###
+POST http://127.0.0.1:8000/api/users/login/
+Content-Type: application/json
+
+{
+    "username": "ron",
+    "password": "test123"
+}
+
+###
+
+###
+POST http://127.0.0.1:8000/api/users/login/
+Content-Type: application/json
+
+{
+    "email": "ron@test.com",
+    "password": "test123"
+}
+
+
+### Registeration API
+POST http://127.0.0.1:8000/api/users/register/
+Content-Type: application/json
+
+{
+    "email": "test@gmail.com",
+    "username": "testuser",
+    "password": "Testpass123",
+    "confirm_password": "Testpass123"
+}
+
+
+### Test account created on registration
+POST http://127.0.0.1:8000/api/users/login/
+Content-Type: application/json
+
+{
+    "email": "test@gmail.com",
+    "password": "Testpass123"
+}
+
+### Test account created on registration
+GET http://127.0.0.1:8000/api/users/me/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzIxNDczLCJpYXQiOjE3NTIzMjA1NzMsImp0aSI6IjMwM2VlMTVhZTc0YzQzNzQ5OTRjMjQyYzEyOWMzNDQwIiwidXNlcl9pZCI6Mn0.RLpmcHmHKA89Hq9NsPkEuNP-AN2NSbASYgRljPvns8U
+
+### Test Protected endpoint
+GET http://127.0.0.1:8000/api/users/hello/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+
+### Logout endpoint
+POST http://127.0.0.1:8000/api/users/logout/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token Here>
+
+
+
+### Test Refresh token endpoint
+POST http://127.0.0.1:8000/api/users/token/refresh/
+Cookie: refresh_token=<Insert Refresh Token Here>
+Content-Type: application/json
+
+
+### Test Project Creation with Category
+POST http://127.0.0.1:8000/api/projects/projects/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzIwNDkxLCJpYXQiOjE3NTIzMTk1OTEsImp0aSI6IjM4OWUyOTlhZTQzODQ0ZTBiOWNmZGYwN2FlNTM4OTlkIiwidXNlcl9pZCI6M30.927YZjFpRW_TSg4bLHfbLlifx6QtWx0w3YVweuUhfmw
+
+{
+    "name": "Full Stack App",
+    "owner": 3,
+    "description": "Create full-stack app with gamification",
+    "category": 2,
+    "emoji": "🚀"
+}
+
+### Assign a user to the project
+POST http://127.0.0.1:8000/api/projects/projects/1/assign_member/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{
+    "user_id": 3
+}
+
+### Get all tasks within a project
+POST http://127.0.0.1:8000/api/projects/tasks/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{
+    "name": "Task 1",
+    "description": "Create the frontend",
+    "project": 1,
+    "status": "in_progress",
+    "priority": "low"
+}
+
+
+### Get all the tasks base on Project ID 
+GET http://127.0.0.1:8000/api/projects/tasks/?project=1
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+
+### Get all the users projects
+GET http://127.0.0.1:8000/api/projects/projects/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+
+### add task to project <id>
+POST http://127.0.0.1:8000/api/projects/tasks/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{
+    "name": "Task 2",
+    "description": "Create the backend",
+    "status": "not_started",
+    "priority": "high",
+    "project": 1
+}
+
+### Complete a task
+POST http://127.0.0.1:8000/api/projects/tasks/1/complete/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{}
+
+### ===============================
+### GAMIFICATION ENDPOINTS
+### ===============================
+
+### Get all categories
+GET http://127.0.0.1:8000/api/gamification/categories/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzIwNDkxLCJpYXQiOjE3NTIzMTk1OTEsImp0aSI6IjM4OWUyOTlhZTQzODQ0ZTBiOWNmZGYwN2FlNTM4OTlkIiwidXNlcl9pZCI6M30.927YZjFpRW_TSg4bLHfbLlifx6QtWx0w3YVweuUhfmw
+
+### Get all teams
+GET http://127.0.0.1:8000/api/gamification/teams/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzIwNDkxLCJpYXQiOjE3NTIzMTk1OTEsImp0aSI6IjM4OWUyOTlhZTQzODQ0ZTBiOWNmZGYwN2FlNTM4OTlkIiwidXNlcl9pZCI6M30.927YZjFpRW_TSg4bLHfbLlifx6QtWx0w3YVweuUhfmw
+
+### Create a team
+POST http://127.0.0.1:8000/api/gamification/teams/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyMzIwNDkxLCJpYXQiOjE3NTIzMTk1OTEsImp0aSI6IjM4OWUyOTlhZTQzODQ0ZTBiOWNmZGYwN2FlNTM4OTlkIiwidXNlcl9pZCI6M30.927YZjFpRW_TSg4bLHfbLlifx6QtWx0w3YVweuUhfmw
+
+{
+    "name": "Development Squad",
+    "description": "Elite software development team",
+    "category": 2,
+    "avatar": "🚀",
+    "max_members": 10,
+    "is_public": true,
+    "administrator": 3
+}
+
+### Join a team
+POST http://127.0.0.1:8000/api/gamification/teams/1/join/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{}
+
+### Get team leaderboard
+GET http://127.0.0.1:8000/api/gamification/teams/1/leaderboard/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get team challenges
+GET http://127.0.0.1:8000/api/gamification/teams/1/challenges/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Create team challenge
+POST http://127.0.0.1:8000/api/gamification/challenges/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{
+    "name": "Sprint Challenge",
+    "description": "Complete 20 tasks this week",
+    "team": 1,
+    "target_type": "tasks_completed",
+    "target_value": 20,
+    "start_date": "2024-01-15T00:00:00Z",
+    "end_date": "2024-01-22T23:59:59Z",
+    "points_reward": 1000
+}
+
+### Get all achievements
+GET http://127.0.0.1:8000/api/gamification/achievements/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get my achievements
+GET http://127.0.0.1:8000/api/gamification/achievements/my_achievements/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get achievement progress
+GET http://127.0.0.1:8000/api/gamification/achievements/progress/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get global leaderboard
+GET http://127.0.0.1:8000/api/gamification/leaderboard/global_leaderboard/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get team leaderboard
+GET http://127.0.0.1:8000/api/gamification/leaderboard/team_leaderboard/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get dashboard stats
+GET http://127.0.0.1:8000/api/gamification/dashboard/stats/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get activity log
+GET http://127.0.0.1:8000/api/gamification/activities/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get my tasks
+GET http://127.0.0.1:8000/api/projects/tasks/my_tasks/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Get created tasks
+GET http://127.0.0.1:8000/api/projects/tasks/created_by_me/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+### Assign task to user
+POST http://127.0.0.1:8000/api/projects/tasks/1/assign/
+Content-Type: application/json
+Authorization: Bearer <Insert Access Token>
+
+{
+    "user_id": 2
+}
