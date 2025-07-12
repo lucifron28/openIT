@@ -145,7 +145,7 @@
 </script>
 
 <svelte:head>
-	<title>Projects - Zentry</title>
+	<title>Projects - AQuest</title>
 </svelte:head>
 
 <div class="space-y-8">

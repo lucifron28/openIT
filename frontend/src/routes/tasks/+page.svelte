@@ -175,7 +175,7 @@
 </script>
 
 <svelte:head>
-	<title>Tasks - Zentry</title>
+	<title>Tasks - AQuest</title>
 </svelte:head>
 
 <div class="space-y-6">

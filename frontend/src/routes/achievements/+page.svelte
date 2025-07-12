@@ -134,7 +134,7 @@
 </script>
 
 <svelte:head>
-	<title>Achievements - Zentry</title>
+	<title>Achievements - AQuest</title>
 </svelte:head>
 
 <div class="space-y-6">

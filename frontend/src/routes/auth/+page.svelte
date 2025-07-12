@@ -55,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>{isLogin ? 'Login' : 'Register'} - Zentry</title>
+	<title>{isLogin ? 'Login' : 'Register'} - AQuest</title>
 </svelte:head>
 
 <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">

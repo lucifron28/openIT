@@ -30,7 +30,7 @@
   });
 
   let taskStats = { todo: 8, inProgress: 3, completed: 15 };
-  let currentProject = { name: 'Zentry Development', emoji: '🚀', progress: 65 };
+  let currentProject = { name: 'AQuest Development', emoji: '🚀', progress: 65 };
   let recentActivity = [
     { action: 'Completed task', task: 'Set up authentication', time: '2 hours ago', emoji: '✅' },
     { action: 'Started task', task: 'Design dashboard UI', time: '4 hours ago', emoji: '🎨' },

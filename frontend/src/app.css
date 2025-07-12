@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* Custom CSS variables for the gaming theme */
 :root {
   --bg-primary: hsl(222.2 84% 4.9%);
   --bg-secondary: hsl(217.2 32.6% 17.5%);

@@ -7,7 +7,7 @@
 			id: 1,
 			type: 'ai',
 			content: "Hello! I'm Zenturion, your AI productivity coach! 🤖 I'm here to help you stay motivated and achieve your goals. How can I assist you today?",
-			timestamp: new Date(Date.now() - 300000) // 5 minutes ago
+			timestamp: new Date(Date.now() - 300000)
 		}
 	];
 	
@@ -81,7 +81,6 @@
 	function sendMessage() {
 		if (!currentMessage.trim()) return;
 		
-		// Add user message
 		const userMsg = currentMessage.trim();
 		messages = [...messages, {
 			id: Date.now(),
@@ -93,11 +92,9 @@
 		currentMessage = '';
 		isTyping = true;
 		
-		// Get AI response with more realistic timing
 		const startTime = Date.now();
 		ai.generateResponse(userMsg, messages)
 			.then(aiResponse => {
-				// Ensure minimum response time for better UX (simulate thinking)
 				const elapsed = Date.now() - startTime;
 				const minDelay = !ai.API_KEY || ai.API_KEY === 'your-gemini-api-key-here' ? 1000 : 500;
 				const remainingDelay = Math.max(0, minDelay - elapsed);
@@ -190,7 +187,7 @@
 </script>
 
 <svelte:head>
-	<title>AI Coach - Zenturion - Zentry</title>
+	<title>AI Coach - Zenturion - AQuest</title>
 </svelte:head>
 
 <div class="space-y-6">

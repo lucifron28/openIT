@@ -32,7 +32,7 @@
 </script>
 
 <svelte:head>
-  <title>Login - Zentry</title>
+  <title>Login - AQuest</title>
 </svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
