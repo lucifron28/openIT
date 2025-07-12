@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, UserListSerializer
 
 User = get_user_model()
 
@@ -70,14 +70,33 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         user = request.user
+        exp = getattr(user, "exp_points", 0)
+        level = exp // 100 + 1
+        experience = exp % 100
+        experience_to_next = 100 - experience
         return Response({
             "id": user.id,
             "username": user.username,
             "name": user.get_full_name() or user.username,
             "email": user.email,
             "avatar": getattr(user, "avatar", "🧑‍💻"),
-            "level": getattr(user, "level", 1),
-            "experience": getattr(user, "experience", 0),
-            "experienceToNext": getattr(user, "experienceToNext", 100),
-            "currentStreak": getattr(user, "currentStreak", 0)
+            "level": level,
+            "experience": experience,
+            "experienceToNext": experience_to_next,
+            "currentStreak": getattr(user, "current_streak", 0),
+            "points": getattr(user, "points", 0),
         })
+
+
+class UserListSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "first_name", "last_name", "avatar"]
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.all()
+        serializer = UserListSerializer(users, many=True)
+        return Response(serializer.data)

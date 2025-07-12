@@ -93,19 +93,35 @@
 		return p ? p.name : '—';
 	}
 
+	function canEditTask(task: any) {
+		if (!task.assigned_to) {
+			return true;
+		}
+		return (
+			(task.assigned_to?.id === currentUser?.id) ||
+			(task.created_by === currentUser?.id) ||
+			(project?.owner && project.owner === currentUser?.id)
+		);
+	}
+
 	async function toggleTaskStatus(task: any) {
 		let newStatus = task.status === 'todo' ? 'in_progress'
 			: task.status === 'in_progress' ? 'completed' : 'todo';
+		let body: any = { status: newStatus };
+		if (!task.assigned_to) {
+			body.assigned_to = currentUser.id;
+		}
 		const res = await fetch(`${API_BASE_URL}/api/projects/tasks/${task.id}/`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			credentials: 'include',
-			body: JSON.stringify({ status: newStatus })
+			body: JSON.stringify(body)
 		});
 		if (res.ok) await fetchTasks();
 	}
 
 	async function deleteTask(task: any) {
+		if (!canEditTask(task)) return;
 		if (!confirm('Are you sure you want to delete this task?')) return;
 		const url = `${API_BASE_URL}/api/projects/tasks/${task.id}/`;
 		const res = await fetch(url, {
@@ -154,13 +170,6 @@
 			const err = await res.json();
 			errorMsg = typeof err === 'object' ? JSON.stringify(err) : err;
 		}
-	}
-
-	function canEditTask(task: any) {
-		return (
-			task.created_by === currentUser?.id ||
-			(project?.owner && project.owner === currentUser?.id)
-		);
 	}
 </script>
 

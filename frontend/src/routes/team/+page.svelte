@@ -20,14 +20,16 @@
 	};
 
 	let teams: Team[] = [];
+	let users: User[] = [];
 	let loading = false;
 	let showAddTeam = false;
 	let showMembersModal = false;
 	let currentTeam: Team | null = null;
 	let newTeam = { name: '', description: '', emoji: '' };
-	let inputUserId: string = '';
+	let inputUsername: string = '';
 	let errorMsg = '';
 	let currentUserId: number | null = null;
+	let userSearch: string = '';
 
 	const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 	const API_URL = API_BASE_URL + '/api/projects/projects/';
@@ -46,6 +48,11 @@
 		const res = await fetch(API_URL, { credentials: 'include' });
 		teams = res.ok ? await res.json() : [];
 		loading = false;
+	}
+
+	async function fetchUsers() {
+		const res = await fetch(API_BASE_URL + '/api/users/', { credentials: 'include' });
+		users = res.ok ? await res.json() : [];
 	}
 
 	async function addTeam() {
@@ -68,41 +75,45 @@
 		} else {
 			const error = await res.json();
 			errorMsg = typeof error === 'object' ? JSON.stringify(error) : error;
-			alert('Failed to add team: ' + errorMsg);
+			alert('Failed to add project: ' + errorMsg);
 		}
 	}
 
 	async function deleteTeam(teamId: number) {
-		if (!confirm('Are you sure you want to delete this team?')) return;
+		if (!confirm('Are you sure you want to delete this project?')) return;
 		const res = await fetch(`${API_URL}${teamId}/`, {
 			method: 'DELETE',
 			credentials: 'include'
 		});
 		if (res.ok || res.status === 204) {
 			await fetchTeams();
+			if (currentTeam?.id === teamId) showMembersModal = false;
 		} else {
 			const err = await res.json();
 			alert('Failed to delete: ' + JSON.stringify(err));
 		}
-	}
+	} 
 
 	function openMembers(team: Team) {
 		currentTeam = team;
 		showMembersModal = true;
+		userSearch = '';
+		inputUsername = '';
+		fetchUsers();
 	}
 
 	async function addMember() {
-		if (!inputUserId || !currentTeam) return;
-		const user_id = Number(inputUserId);
+		if (!inputUsername || !currentTeam) return;
 		const res = await fetch(`${API_URL}${currentTeam.id}/assign_member/`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			credentials: 'include',
-			body: JSON.stringify({ user_id })
+			body: JSON.stringify({ username: inputUsername })
 		});
 		if (res.ok) {
 			await fetchTeams();
-			inputUserId = '';
+			inputUsername = '';
+			userSearch = '';
 			currentTeam = teams.find(t => t.id === currentTeam?.id) || null;
 		} else {
 			alert('Failed to add member');
@@ -111,6 +122,7 @@
 
 	async function removeMember(userId: number) {
 		if (!currentTeam) return;
+		if (userId === currentTeam.owner) return;
 		const res = await fetch(`${API_URL}${currentTeam.id}/remove_member/`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -125,21 +137,25 @@
 		}
 	}
 
+	$: filteredUsers = userSearch
+		? users.filter(u => u.username.toLowerCase().includes(userSearch.toLowerCase()))
+		: users;
+
 	onMount(fetchTeams);
 </script>
 
 <svelte:head>
-	<title>Teams - Zentry</title>
+	<title>Projects - Zentry</title>
 </svelte:head>
 
 <div class="space-y-8">
 	<div class="flex justify-between items-center mb-2">
 		<h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">Projects</h1>
 		<button on:click={() => showAddTeam = true} class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-5 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-teal-600">Add Project</button>
-	</div>
+	</div> 
 
 	{#if loading}
-		<div class="text-center text-slate-400 py-8">Loading teams…</div>
+		<div class="text-center text-slate-400 py-8">Loading projects…</div>
 	{:else if !teams.length}
 		<div class="text-center text-slate-400 py-8">No projects found.</div>
 	{:else}
@@ -165,8 +181,12 @@
 								<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-700 text-white text-xs gap-1">
 									<span class="text-lg">{member.avatar || '👤'}</span>
 									<span>{member.first_name} {member.last_name}</span>
-									{#if currentUserId === team.owner}
+									<span class="text-slate-400 ml-1">@{member.username}</span>
+									{#if currentUserId === team.owner && member.id !== team.owner}
 										<button on:click={() => removeMember(member.id)} class="ml-2 px-1 rounded hover:bg-red-700/40 text-red-300 text-xs">&times;</button>
+									{/if}
+									{#if member.id === team.owner}
+										<span class="ml-2 text-xs text-slate-400">(Owner)</span>
 									{/if}
 								</span>
 							{/each}
@@ -218,15 +238,29 @@
 			<h2 class="text-xl font-bold text-white mb-4">Manage Members for {currentTeam.name}</h2>
 			{#if currentUserId === currentTeam.owner}
 			<div>
-				<label class="block text-slate-300 mb-1">User ID</label>
+				<label class="block text-slate-300 mb-1">Search Username</label>
 				<input
-					type="number"
-					class="w-full mb-4 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
-					bind:value={inputUserId}
-					placeholder="Enter user ID to add"
-					min="1"
+					type="text"
+					class="w-full mb-2 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+					bind:value={userSearch}
+					placeholder="Type username to search..."
 				/>
-				<button class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-4 py-2 rounded-lg" on:click={addMember} disabled={!inputUserId}>Add Member</button>
+				<ul class="max-h-32 overflow-y-auto mb-3">
+					{#each filteredUsers.slice(0, 8) as u}
+						<li class="flex items-center justify-between py-1 px-2 hover:bg-slate-600 rounded cursor-pointer"
+							on:click={() => { inputUsername = u.username; userSearch = u.username; }}>
+							<div class="flex gap-2 items-center">
+								<span class="text-lg">{u.avatar || '👤'}</span>
+								<span>@{u.username}</span>
+								<span class="text-slate-400 text-xs ml-1">{u.first_name} {u.last_name}</span>
+							</div>
+							{#if inputUsername === u.username}
+								<span class="text-green-400 text-xs">Selected</span>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+				<button class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-4 py-2 rounded-lg" on:click={addMember} disabled={!inputUsername}>Add Member</button>
 			</div>
 			{/if}
 			<div class="mt-6">
@@ -237,6 +271,17 @@
 							<li class="flex items-center gap-2 text-white mb-1">
 								<span class="text-lg">{member.avatar || '👤'}</span>
 								<span>{member.first_name} {member.last_name} (@{member.username})</span>
+								{#if currentUserId === currentTeam.owner && member.id !== currentTeam.owner}
+									<button
+										on:click={() => removeMember(member.id)}
+										class="ml-2 px-1 rounded hover:bg-red-700/40 text-red-300 text-xs"
+									>
+										&times;
+									</button>
+								{/if}
+								{#if member.id === currentTeam.owner}
+									<span class="ml-2 text-xs text-slate-400">(Owner)</span>
+								{/if}
 							</li>
 						{/each}
 					</ul>

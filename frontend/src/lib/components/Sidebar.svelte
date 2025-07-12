@@ -1,7 +1,10 @@
 <script>
   import { page } from '$app/stores';
+  import { onMount } from 'svelte';
 
   export let open = true;
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: '📊', emoji: '🏠' },
@@ -14,13 +17,46 @@
 
   $: currentPath = $page.url.pathname;
 
+  let user = {
+    id: null,
+    currentStreak: 0,
+    experience: 0,
+    experienceToNext: 100,
+    level: 1,
+    avatar: '👤',
+    points: 0,
+    username: ''
+  };
+  let loadingUser = true;
+
+  onMount(async () => {
+    try {
+
+      const res = await fetch(`${API_BASE_URL}/api/users/me/`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        user.currentStreak = data.currentStreak ?? 0;
+        user.experience = data.experience ?? 0;
+        user.experienceToNext = data.experienceToNext ?? 100;
+        user.level = data.level ?? 1;
+        user.avatar = data.avatar || '👤';
+        user.points = data.points ?? 0;
+        user.username = data.username ?? '';
+        user.id = data.id ?? null;
+      }
+    } finally {
+      loadingUser = false;
+    }
+  });
+
+  $: xpPercent = Math.min(100, Math.round((user.experience / user.experienceToNext) * 100));
+
   async function logout() {
     try {
-      await fetch('/api/users/logout/', {
+      await fetch(`${API_BASE_URL}/api/users/logout/`, {
         method: 'POST',
         credentials: 'include'
       });
-
       document.cookie = 'access_token=; Max-Age=0; path=/';
       document.cookie = 'refresh_token=; Max-Age=0; path=/api/token/refresh/';
       window.location.href = '/login';
@@ -76,20 +112,28 @@
   {#if open}
     <div class="p-4 border-t border-slate-700/50">
       <div class="bg-gradient-to-r from-purple-500/10 to-teal-500/10 rounded-lg p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-gray-300">Current Streak</span>
-          <div class="flex items-center space-x-1">
-            <span class="text-orange-400">🔥</span>
-            <span class="text-white font-semibold">5 days</span>
+        {#if loadingUser}
+          <div class="text-gray-400 text-center">Loading…</div>
+        {:else}
+          <div class="flex items-center justify-between mb-1">
+            <span class="flex items-center gap-2">
+              <span class="text-2xl">{user.avatar}</span>
+              <span class="text-white font-semibold">@{user.username}</span>
+            </span>
+            <span class="text-xs bg-slate-700 px-2 py-1 rounded text-purple-300">Level {user.level}</span>
           </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-gray-300">Level Progress</span>
-          <span class="text-white font-semibold">XP 250/500</span>
-        </div>
-        <div class="w-full bg-slate-700 rounded-full h-2">
-          <div class="bg-gradient-to-r from-purple-500 to-teal-500 h-2 rounded-full" style="width: 50%"></div>
-        </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-300">Current Streak</span>
+            <div class="flex items-center space-x-1">
+              <span class="text-orange-400">🔥</span>
+              <span class="text-white font-semibold">{user.currentStreak} day{user.currentStreak === 1 ? '' : 's'}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-300">Points</span>
+            <span class="text-teal-300 font-bold">{user.points}</span>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}

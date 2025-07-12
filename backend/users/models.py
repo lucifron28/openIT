@@ -6,15 +6,12 @@ from django.utils import timezone
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     
-    # Gamification fields
     points = models.IntegerField(default=0)
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_activity_date = models.DateField(null=True, blank=True)
-    exp_points = models.IntegerField(default=0)
     
-    # Profile fields
-    avatar = models.CharField(max_length=10, default='👤')  # Emoji avatar
+    avatar = models.CharField(max_length=10, default='👤')
     bio = models.TextField(blank=True, max_length=500)
     location = models.CharField(max_length=100, blank=True)
     

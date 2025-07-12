@@ -31,44 +31,67 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
+    def create_task(self, request, pk=None):
+        project = self.get_object()
+        serializer = TaskCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(project=project)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
     def assign_member(self, request, pk=None):
         project = self.get_object()
-        # Only the owner can assign members
         if project.owner != request.user:
-            return Response(
-                {'error': 'Only the owner can add members.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({'error': 'Only the owner can add members.'}, status=status.HTTP_403_FORBIDDEN)
         user_id = request.data.get('user_id')
-        if not user_id:
-            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user = User.objects.get(id=user_id)
-            project.project_members.add(user)
-            serializer = ProjectSerializer(project, context={'request': request})
-            return Response(serializer.data)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        username = request.data.get('username')
+        user = None
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        elif username:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'user_id or username is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if user == project.owner:
+            return Response({'error': 'Owner is already a member.'}, status=status.HTTP_400_BAD_REQUEST)
+        project.project_members.add(user)
+        serializer = ProjectSerializer(project, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def remove_member(self, request, pk=None):
         project = self.get_object()
-        # Only the owner can remove members
         if project.owner != request.user:
-            return Response(
-                {'error': 'Only the owner can remove members.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({'error': 'Only the owner can remove members.'}, status=status.HTTP_403_FORBIDDEN)
         user_id = request.data.get('user_id')
-        if not user_id:
-            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user = User.objects.get(id=user_id)
-            project.project_members.remove(user)
-            serializer = ProjectSerializer(project, context={'request': request})
-            return Response(serializer.data)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        username = request.data.get('username')
+        user = None
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        elif username:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'user_id or username is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if user == project.owner:
+            return Response({'error': 'Cannot remove owner from project.'}, status=status.HTTP_400_BAD_REQUEST)
+        if user not in project.project_members.all():
+            return Response({'error': 'User is not a member.'}, status=status.HTTP_400_BAD_REQUEST)
+        project.project_members.remove(user)
+        serializer = ProjectSerializer(project, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def stats(self, request, pk=None):
@@ -83,30 +106,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
             'overdue_tasks': tasks.filter(
                 due_date__lt=timezone.now(),
                 status__in=['todo', 'in_progress']
-            ).count() if hasattr(tasks.first(), 'due_date') else 0,
+            ).count() if tasks and hasattr(tasks.first(), 'due_date') else 0,
         }
         return Response(stats)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        # Only the owner can delete the team
-        if instance.owner != request.user:
-            return Response(
-                {'error': 'Only the owner can delete this team.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        self.perform_destroy(instance)
-        return Response({'detail': 'Project deleted.'}, status=status.HTTP_204_NO_CONTENT)
 
 class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
         return Task.objects.filter(
-            models.Q(created_by=self.request.user) | 
-            models.Q(assigned_to=self.request.user) |
-            models.Q(project__owner=self.request.user)
-        ).select_related('project', 'assigned_to', 'created_by')
+            models.Q(project__owner=user) | 
+            models.Q(project__project_members=user)
+        ).distinct().select_related('project', 'assigned_to', 'created_by')
+
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -122,23 +135,23 @@ class TaskViewSet(viewsets.ModelViewSet):
     def complete(self, request, pk=None):
         task = self.get_object()
         if task.assigned_to != request.user and task.created_by != request.user:
-            return Response(
-                {'error': 'You do not have permission to complete this task'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({'error': 'You do not have permission to complete this task'},
+                            status=status.HTTP_403_FORBIDDEN)
         with transaction.atomic():
-            if task.complete_task():
-                serializer = self.get_serializer(task)
-                return Response({
-                    'message': 'Task completed successfully',
-                    'experience_gained': task.experience_reward,
-                    'task': serializer.data
-                })
+            if hasattr(task, 'complete_task') and callable(task.complete_task):
+                if task.complete_task():
+                    serializer = self.get_serializer(task)
+                    return Response({
+                        'message': 'Task completed successfully',
+                        'experience_gained': getattr(task, 'experience_reward', None),
+                        'task': serializer.data
+                    })
+                else:
+                    return Response({'error': 'Task could not be completed'},
+                                    status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response(
-                    {'error': 'Task could not be completed'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'error': 'Task model missing complete_task method'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'])
     def my_tasks(self, request):
@@ -162,27 +175,27 @@ class TaskViewSet(viewsets.ModelViewSet):
     def assign(self, request, pk=None):
         task = self.get_object()
         if task.created_by != request.user and task.project.owner != request.user:
-            return Response(
-                {'error': 'You do not have permission to assign this task'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({'error': 'You do not have permission to assign this task'},
+                            status=status.HTTP_403_FORBIDDEN)
         user_id = request.data.get('user_id')
-        if not user_id:
-            return Response(
-                {'error': 'user_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        try:
-            user = User.objects.get(id=user_id)
-            task.assigned_to = user
-            task.save()
-            serializer = self.get_serializer(task)
-            return Response({
-                'message': f'Task assigned to {user.username}',
-                'task': serializer.data
-            })
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'User not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        username = request.data.get('username')
+        user = None
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        elif username:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'user_id or username is required'}, status=status.HTTP_400_BAD_REQUEST)
+        task.assigned_to = user
+        task.save()
+        serializer = self.get_serializer(task)
+        return Response({
+            'message': f'Task assigned to {user.username}',
+            'task': serializer.data
+        })

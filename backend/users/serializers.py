@@ -27,7 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id","email", "username", "password", "confirm_password", "exp_points"]
+        fields = ["email", "username", "password", "confirm_password"]
     
     def validate(self, data):
         if data["password"] != data["confirm_password"]:
@@ -43,3 +43,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data["password"])
         user.save()
         return user
+
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'username', 'avatar']
