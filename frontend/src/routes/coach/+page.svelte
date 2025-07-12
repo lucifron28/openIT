@@ -99,7 +99,7 @@
 			.then(aiResponse => {
 				// Ensure minimum response time for better UX (simulate thinking)
 				const elapsed = Date.now() - startTime;
-				const minDelay = ai.API_KEY === 'your-openai-api-key-here' ? 1000 : 500;
+				const minDelay = !ai.API_KEY || ai.API_KEY === 'your-gemini-api-key-here' ? 1000 : 500;
 				const remainingDelay = Math.max(0, minDelay - elapsed);
 				
 				setTimeout(() => {
@@ -206,7 +206,7 @@
 		<div class="flex items-center gap-4">
 			<!-- AI Status -->
 			<div class="flex items-center gap-2">
-				{#if ai.API_KEY === 'your-openai-api-key-here'}
+				{#if !ai.API_KEY || ai.API_KEY === 'your-gemini-api-key-here'}
 					<div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
 					<span class="text-yellow-400 text-sm font-medium">Demo Mode</span>
 				{:else}
@@ -218,7 +218,7 @@
 	</div>
 
 	<!-- API Configuration Notice -->
-	{#if ai.API_KEY === 'your-openai-api-key-here'}
+	{#if !ai.API_KEY || ai.API_KEY === 'your-gemini-api-key-here'}
 		<div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
 			<div class="flex items-start gap-3">
 				<span class="text-2xl">⚙️</span>
@@ -228,9 +228,9 @@
 						You're currently using fallback responses. To enable full AI capabilities:
 					</p>
 					<ol class="text-yellow-200 text-sm space-y-1 ml-4 list-decimal">
-						<li>Get an OpenAI API key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-yellow-300 hover:underline">platform.openai.com</a></li>
+						<li>Get a Google Gemini API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" class="text-yellow-300 hover:underline">makersuite.google.com</a></li>
 						<li>Copy <code class="bg-yellow-500/20 px-1 rounded">.env.example</code> to <code class="bg-yellow-500/20 px-1 rounded">.env.local</code></li>
-						<li>Set <code class="bg-yellow-500/20 px-1 rounded">VITE_OPENAI_API_KEY=your-actual-key</code></li>
+						<li>Set <code class="bg-yellow-500/20 px-1 rounded">VITE_GEMINI_API_KEY=your-actual-key</code></li>
 						<li>Restart the development server</li>
 					</ol>
 				</div>

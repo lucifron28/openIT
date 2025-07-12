@@ -1,65 +1,88 @@
-// AI Service for Zenturion Coach
+// AI Service for Zenturion Coach using Google Gemini
 export const ai = {
 	// Placeholder API key - in production, this should be set via environment variables
-	API_KEY: import.meta.env.VITE_OPENAI_API_KEY || '',
-	API_URL: 'https://api.openai.com/v1/chat/completions',
+	API_KEY: import.meta.env.VITE_GEMINI_API_KEY || '',
+	API_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent',
 
 	async generateResponse(userMessage: string, conversationHistory: any[] = []): Promise<string> {
 		// If no API key is set, return fallback responses
-		if (this.API_KEY === 'your-openai-api-key-here') {
+		if (!this.API_KEY || this.API_KEY === 'your-gemini-api-key-here') {
 			return this.getFallbackResponse(userMessage);
 		}
 
 		try {
-			// Prepare conversation context
-			const messages = [
-				{
-					role: 'system',
-					content: `You are Zenturion, an AI productivity coach. You help users with:
-					- Task management and productivity tips
-					- Team collaboration and motivation
-					- Goal setting and achievement tracking
-					- Sprint planning and project management
-					- Maintaining streaks and consistency
-					- Work-life balance advice
-					
-					Keep responses helpful, encouraging, and actionable. Use emojis occasionally to be friendly.
-					Responses should be 1-3 paragraphs maximum. Focus on practical advice.`
-				},
-				// Add conversation history (last 5 messages to keep context manageable)
-				...conversationHistory.slice(-5).map(msg => ({
-					role: msg.type === 'user' ? 'user' : 'assistant',
-					content: msg.content
-				})),
-				{
-					role: 'user',
-					content: userMessage
-				}
-			];
+			const systemPrompt = `You are Zenturion, an AI productivity coach. You help users with:
+			- Task management and productivity tips
+			- Team collaboration and motivation
+			- Goal setting and achievement tracking
+			- Sprint planning and project management
+			- Maintaining streaks and consistency
+			- Work-life balance advice
+			
+			Keep responses helpful, encouraging, and actionable. Use emojis occasionally to be friendly.
+			Responses should be 1-3 paragraphs maximum. Focus on practical advice.`;
 
-			const response = await fetch(this.API_URL, {
+			let conversationText = systemPrompt + '\n\n';
+			
+			conversationHistory.slice(-5).forEach(msg => {
+				const role = msg.type === 'user' ? 'User' : 'Assistant';
+				conversationText += `${role}: ${msg.content}\n`;
+			});
+			
+			conversationText += `User: ${userMessage}\nAssistant:`;
+
+			const response = await fetch(`${this.API_URL}?key=${this.API_KEY}`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${this.API_KEY}`
 				},
 				body: JSON.stringify({
-					model: 'gpt-3.5-turbo',
-					messages,
-					max_tokens: 300,
-					temperature: 0.7
+					contents: [{
+						parts: [{
+							text: conversationText
+						}]
+					}],
+					generationConfig: {
+						temperature: 0.7,
+						topK: 40,
+						topP: 0.95,
+						maxOutputTokens: 300,
+						stopSequences: []
+					},
+					safetySettings: [
+						{
+							category: "HARM_CATEGORY_HARASSMENT",
+							threshold: "BLOCK_MEDIUM_AND_ABOVE"
+						},
+						{
+							category: "HARM_CATEGORY_HATE_SPEECH",
+							threshold: "BLOCK_MEDIUM_AND_ABOVE"
+						},
+						{
+							category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+							threshold: "BLOCK_MEDIUM_AND_ABOVE"
+						},
+						{
+							category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+							threshold: "BLOCK_MEDIUM_AND_ABOVE"
+						}
+					]
 				})
 			});
 
 			if (!response.ok) {
-				throw new Error(`AI API error: ${response.status}`);
+				const errorData = await response.text();
+				console.error('Gemini API error:', response.status, errorData);
+				throw new Error(`Gemini API error: ${response.status}`);
 			}
 
 			const data = await response.json();
-			return data.choices[0]?.message?.content || this.getFallbackResponse(userMessage);
+			const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+			
+			return aiResponse || this.getFallbackResponse(userMessage);
 
 		} catch (error) {
-			console.error('AI API Error:', error);
+			console.error('Gemini API Error:', error);
 			return this.getFallbackResponse(userMessage);
 		}
 	},
