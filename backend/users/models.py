@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
-
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     
@@ -13,11 +12,12 @@ class User(AbstractUser):
     last_activity_date = models.DateField(null=True, blank=True)
     
     # Profile fields
-    avatar = models.CharField(max_length=10, default='👤')  # Emoji avatar
+    avatar = models.CharField(max_length=10, default='👤')
     bio = models.TextField(blank=True, max_length=500)
     location = models.CharField(max_length=100, blank=True)
     
     USERNAME_FIELD = 'email'
+
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     
     def __str__(self):
