@@ -52,10 +52,13 @@ This system uses JWT Auth
 - Access the database
 `docker compose exec db psql -U postgres -d backend`
 
+- Create a superuser (For Admin Access via Django Admin)
+`docker compose exec backend python manage.py createsuperuser`
 
 ## URLs
 - Frontend - http://localhost:5173/
 - Backend - http://localhost:8000/api/users/login/
+- Admin - http://localhost:8000/admin/
 
 
 # Features
@@ -74,3 +77,6 @@ This system uses JWT Auth
 
 ## Achievements (Not Fully Implemented)
 - Gives users target achievements and awards to motivate them to achieve their goals
+
+## Admin Panel - via Django Admin
+- Allows administators to manage and customize the system
