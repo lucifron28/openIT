@@ -99,7 +99,6 @@ class GamificationService:
     
     @staticmethod
     def check_and_award_achievements(user):
-        """Check and award achievements for user"""
         # Task completion achievements
         tasks_completed = user.assigned_tasks.filter(status='completed').count()
         task_achievements = Achievement.objects.filter(
@@ -162,7 +161,6 @@ class GamificationService:
     
     @staticmethod
     def calculate_achievement_progress(user, achievement):
-        """Calculate current progress for an achievement"""
         if achievement.type == 'task_completion':
             return user.assigned_tasks.filter(status='completed').count()
         elif achievement.type == 'streak':
@@ -222,7 +220,6 @@ class WebhookService:
     
     @staticmethod
     def send_webhook_notification(webhook_config, payload):
-        """Send webhook notification"""
         try:
             if webhook_config.platform == 'discord':
                 return WebhookService._send_discord_webhook(webhook_config.webhook_url, payload)
