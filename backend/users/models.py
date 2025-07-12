@@ -11,6 +11,7 @@ class User(AbstractUser):
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_activity_date = models.DateField(null=True, blank=True)
+    exp_points = models.IntegerField(default=0)
     
     # Profile fields
     avatar = models.CharField(max_length=10, default='👤')  # Emoji avatar

@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from users.models import User
 
-
+# NOTE: Achievement categories
 class Category(models.Model):
     CATEGORY_CHOICES = [
         ('classroom', 'Classroom Team'),
@@ -225,7 +225,7 @@ class ActivityLog(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, null=True, blank=True)
     
-    metadata = models.JSONField(default=dict, blank=True)  # Additional context data
+    metadata = models.JSONField(default=dict, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

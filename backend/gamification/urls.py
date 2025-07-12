@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     CategoryViewSet, TeamViewSet, AchievementViewSet, TeamChallengeViewSet,
-    LeaderboardViewSet, DashboardViewSet, ActivityLogViewSet
+    LeaderboardViewSet, DashboardViewSet, ActivityLogViewSet, TesttWebhookView 
 )
 
 router = DefaultRouter()
@@ -16,4 +16,5 @@ router.register('activities', ActivityLogViewSet, basename='activitylog')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('test-webhook/', TesttWebhookView.as_view(), name='test-webhook'),
 ]

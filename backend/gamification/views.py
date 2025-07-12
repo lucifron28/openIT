@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status, permissions
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction, models
@@ -314,3 +315,29 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(action_type=action_type)
         
         return queryset.select_related('task', 'project', 'team', 'achievement')
+
+
+class TesttWebhookView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        from gamification.models import WebhookConfig
+        """
+        Test webhook integration by sending a test payload to the configured webhook URL.
+        """
+        try:
+            webhook = WebhookConfig.objects.get(platform='discord')
+            payload = {
+                'embeds': [{
+                    'title': 'Test Webhook',
+                    'description': 'This is a test message from the Django backend.',
+                    'color': 3447003,
+                    'fields': [
+                        {'name': 'Status', 'value': '✅ System online', 'inline': True},
+                        {'name': 'Backend', 'value': 'Django + PostgreSQL', 'inline': True}
+                    ]
+                }]
+            }
+            result = WebhookService.send_webhook_notification(webhook, payload)
+            return Response({'message': f'Webhook sent successfully: {result}'}, status=status.HTTP_200_OK)
+        except WebhookConfig.DoesNotExist:
+            return Response({'error': 'Webhook configuration not found'}, status=status.HTTP_404_NOT_FOUND)

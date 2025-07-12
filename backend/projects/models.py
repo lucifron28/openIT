@@ -81,7 +81,7 @@ class Task(models.Model):
         if self.assigned_to and self.status != 'completed':
             self.status = 'completed'
             self.completed_at = timezone.now()
-            self.assigned_to.experience += self.experience_reward
+            self.assigned_to.exp_points += self.experience_reward
             self.assigned_to.save()
             self.save()
             return True
