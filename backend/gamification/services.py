@@ -28,9 +28,39 @@ class GamificationService:
     
     @staticmethod
     def update_user_points(user, points):
-        """Update user points"""
         user.points += points
         user.save(update_fields=['points'])
+    
+    @staticmethod
+    def award_points(user, action_type, points):
+        """Award points to user and log activity"""
+        GamificationService.update_user_points(user, points)
+        
+        GamificationService.log_activity(
+            user=user,
+            action_type=action_type,
+            points_earned=points
+        )
+        
+        GamificationService.update_user_streak(user)
+        
+        # Check for achievements
+        GamificationService.check_and_award_achievements(user)
+        
+        return True
+    
+    @staticmethod
+    def check_achievements(user):
+        """Check and return unlocked achievements for user"""
+        GamificationService.check_and_award_achievements(user)
+        
+        # Return recently earned achievements
+        recent_achievements = UserAchievement.objects.filter(
+            user=user,
+            earned_at__isnull=False
+        ).select_related('achievement').order_by('-earned_at')
+        
+        return [ua.achievement for ua in recent_achievements]
     
     @staticmethod
     def update_user_streak(user):
