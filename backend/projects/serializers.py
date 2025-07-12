@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import Project, Task
 from users.models import User
 
+class UserLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'username', 'avatar']
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_email = serializers.EmailField(read_only=True)
@@ -22,7 +26,6 @@ class TaskSerializer(serializers.ModelSerializer):
         validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
 
-
 class ProjectSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)
     task_count = serializers.SerializerMethodField()
@@ -30,8 +33,9 @@ class ProjectSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     category_name = serializers.CharField(source='category.display_name', read_only=True)
     team_name = serializers.CharField(source='team.name', read_only=True)
-    project_members = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.objects.all(), required=False
+    project_members = UserLiteSerializer(many=True, read_only=True)
+    project_members_ids = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=User.objects.all(), write_only=True, required=False
     )
     
     class Meta:
@@ -39,28 +43,31 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'start_date', 'end_date', 'updated_at',
             'owner', 'owner_username', 'emoji', 'is_active', 'category', 'category_name',
-            'team', 'team_name', 'tasks', 'task_count', 'completed_task_count', 'project_members'
+            'team', 'team_name', 'tasks', 'task_count', 'completed_task_count',
+            'project_members', 'project_members_ids'
         ]
-        read_only_fields = ['id', 'start_date', 'updated_at']
-
-    # NOTE: Assigns a user to the Project
-    def assign_member(self, user):
-        if user not in self.project_members.all():
-            self.project_members.add(user)
-            self.save()
-        return user
+        read_only_fields = ['id', 'start_date', 'updated_at', 'owner']
 
     def get_task_count(self, obj):
         return obj.tasks.count()
-
 
     def get_completed_task_count(self, obj):
         return obj.tasks.filter(status='completed').count()
 
     def create(self, validated_data):
+        members = validated_data.pop('project_members_ids', [])
         validated_data['owner'] = self.context['request'].user
-        return super().create(validated_data)
+        project = super().create(validated_data)
+        if members:
+            project.project_members.set(members)
+        return project
 
+    def update(self, instance, validated_data):
+        members = validated_data.pop('project_members_ids', None)
+        instance = super().update(instance, validated_data)
+        if members is not None:
+            instance.project_members.set(members)
+        return instance
 
 class TaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -73,7 +80,6 @@ class TaskCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
-
 
 class TaskUpdateSerializer(serializers.ModelSerializer):
     class Meta:

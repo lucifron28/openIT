@@ -55,6 +55,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'users.middleware.JWTAuthCookieMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -147,21 +148,36 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'users.User'
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get('ACCESS_TOKEN_LIFETIME_MINUTES', 15))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get('ACCESS_TOKEN_LIFETIME_MINUTES', 300))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get('REFRESH_TOKEN_LIFETIME_DAYS', 30))),
-
-    # Get the refresh token cookie name from settings.py -> SIMPLE_JWT["AUTH_COOKIE"]
-    "AUTH_COOKIE": os.environ.get("AUTH_COOKIE_NAME", "AUTH_COOKIE"), # Used for HttpOnly cookie name
-
-    "AUTH_COOKIE_PATH": os.environ.get("AUTH_COOKIE_PATH", "/api/users/token/refresh")
-    # Optional additional settings:
-    # "ROTATE_REFRESH_TOKENS": False,
-    # "BLACKLIST_AFTER_ROTATION": True,
-    # "ALGORITHM": "HS256",
-    # "SIGNING_KEY": SECRET_KEY,
-    # "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_COOKIE": os.environ.get("AUTH_COOKIE_NAME", "AUTH_COOKIE"),
+    "AUTH_COOKIE": "refresh_token",
+    "AUTH_COOKIE_PATH": os.environ.get("AUTH_COOKIE_PATH", "/api/auth/token/refresh"),
 }
 
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+]
 
-CORS_ALLOW_CREDENTIALS = os.environ.get('CORS_ALLOW_CREDENTIALS', 'True').lower() == 'true'
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]

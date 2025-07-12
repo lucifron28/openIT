@@ -1,70 +1,83 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer
-from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.contrib.auth import get_user_model
 from django.conf import settings
+
+from .serializers import RegisterSerializer
 
 User = get_user_model()
 
-# NOTE: User Registration View
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
-# HACK: For protected endpoint testing purposes only
-# TODO: Delete later once tested
-class HelloView(CreateAPIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        return Response({"message": f"Hello, {request.user.username}"})
-
-# NOTE: Login View using JWT Auth returns Access Token as JSON and Refresh Token as Cookie
 class CookieTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        # NOTE: This calls the TokenObtainPairView to generate a new Access Token
         response = super().post(request, *args, **kwargs)
-
         if response.status_code == 200:
-            refresh = response.data["refresh"]
+            access = response.data.get("access")
+            refresh = response.data.get("refresh")
             del response.data["refresh"]
-        
             response.set_cookie(
-                key=settings.SIMPLE_JWT["AUTH_COOKIE"],
+                key="access_token",
+                value=access,
+                httponly=False,
+                secure=False,
+                samesite='Lax',
+                path='/'
+            )
+            response.set_cookie(
+                key="refresh_token",
                 value=refresh,
                 httponly=True,
-                secure=False, # NOTE: Set this to "True" in Production
+                secure=False,
                 samesite='Lax',
-                path='/api/token/refresh/',
+                path='/api/token/refresh/'
             )
-
         return response
 
-# NOTE: View For Token Refresh using Cookies
 class CookieTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh = request.COOKIES.get(settings.SIMPLE_JWT["AUTH_COOKIE"])
-        
         if refresh is None:
             return Response({"error": "Refresh token is not provided."}, status=400)
-        
         request.data["refresh"] = refresh
-
-        # NOTE: Generates and Returns a new Access Token
         return super().post(request, *args, **kwargs)
 
-# NOTE: This Logout view deletes the Refresh Token Cookie
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        response = Response({"Message": "Logged out succesfully"})
+        response = Response({"Message": "Logged out successfully"})
+        response.delete_cookie(
+            key="access_token",
+            path="/",
+        )
         response.delete_cookie(
             key=settings.SIMPLE_JWT["AUTH_COOKIE"],
-            path='/api/token/refresh/',
+            path="/api/token/refresh/",
         )
         return response
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "name": user.get_full_name() or user.username,
+            "email": user.email,
+            "avatar": getattr(user, "avatar", "🧑‍💻"),
+            "level": getattr(user, "level", 1),
+            "experience": getattr(user, "experience", 0),
+            "experienceToNext": getattr(user, "experienceToNext", 100),
+            "currentStreak": getattr(user, "currentStreak", 0)
+        })

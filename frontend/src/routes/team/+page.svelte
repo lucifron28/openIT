@@ -1,320 +1,252 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	
-	type TeamMember = {
+
+	type User = {
 		id: number;
-		username: string;
 		first_name: string;
 		last_name: string;
-		avatar: string;
-		role: string;
-		level: number;
-		experience_points: number;
-		current_streak: number;
-		tasks_completed: number;
-		rank: number;
+		username: string;
+		avatar?: string;
 	};
 
-	let teamMembers: TeamMember[] = [
-		{
-			id: 1,
-			username: 'mike_backend',
-			first_name: 'Mike',
-			last_name: 'Backend',
-			avatar: '⚙️',
-			role: 'Backend Developer',
-			level: 5,
-			experience_points: 450,
-			current_streak: 7,
-			tasks_completed: 25,
-			rank: 1
-		},
-		{
-			id: 2,
-			username: 'sarah_designer',
-			first_name: 'Sarah',
-			last_name: 'Designer',
-			avatar: '🎨',
-			role: 'UI/UX Designer',
-			level: 4,
-			experience_points: 320,
-			current_streak: 3,
-			tasks_completed: 18,
-			rank: 2
-		},
-		{
-			id: 3,
-			username: 'alex_dev',
-			first_name: 'Alex',
-			last_name: 'Developer',
-			avatar: '👨‍💻',
-			role: 'Frontend Developer',
-			level: 3,
-			experience_points: 250,
-			current_streak: 5,
-			tasks_completed: 12,
-			rank: 3
-		},
-		{
-			id: 4,
-			username: 'admin',
-			first_name: 'Ron Vincent',
-			last_name: 'Cada',
-			avatar: '👑',
-			role: 'Project Manager',
-			level: 1,
-			experience_points: 0,
-			current_streak: 0,
-			tasks_completed: 0,
-			rank: 4
-		}
-	];
-	
-	let selectedLeaderboard = 'experience_points';
-	let leaderboardTypes = [
-		{ value: 'experience_points', label: 'Experience Points', emoji: '⭐' },
-		{ value: 'tasks_completed', label: 'Tasks Completed', emoji: '✅' },
-		{ value: 'current_streak', label: 'Current Streak', emoji: '🔥' },
-		{ value: 'level', label: 'Level', emoji: '🌟' }
-	];
-	
-	// Sort team members based on selected leaderboard
-	$: sortedMembers = [...teamMembers].sort((a, b) => {
-		const aValue = a[selectedLeaderboard as keyof TeamMember] as number;
-		const bValue = b[selectedLeaderboard as keyof TeamMember] as number;
-		return bValue - aValue;
-	});
-	
-	function getRankColor(rank: number): string {
-		switch (rank) {
-			case 1: return 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900';
-			case 2: return 'bg-gradient-to-r from-gray-300 to-gray-500 text-gray-900';
-			case 3: return 'bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100';
-			default: return 'bg-slate-600 text-slate-300';
+	type Team = {
+		id: number;
+		name: string;
+		description: string;
+		emoji?: string;
+		project_members: User[];
+		owner: number;
+		owner_username: string;
+	};
+
+	let teams: Team[] = [];
+	let loading = false;
+	let showAddTeam = false;
+	let showMembersModal = false;
+	let currentTeam: Team | null = null;
+	let newTeam = { name: '', description: '', emoji: '' };
+	let inputUserId: string = '';
+	let errorMsg = '';
+	let currentUserId: number | null = null;
+
+	const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+	const API_URL = API_BASE_URL + '/api/projects/projects/';
+
+	async function fetchCurrentUser() {
+		const res = await fetch(API_BASE_URL + '/api/users/me/', { credentials: 'include' });
+		if (res.ok) {
+			const data = await res.json();
+			currentUserId = data.id;
 		}
 	}
-	
-	function getRankEmoji(rank: number): string {
-		switch (rank) {
-			case 1: return '🥇';
-			case 2: return '🥈';
-			case 3: return '🥉';
-			default: return `#${rank}`;
+
+	async function fetchTeams() {
+		loading = true;
+		await fetchCurrentUser();
+		const res = await fetch(API_URL, { credentials: 'include' });
+		teams = res.ok ? await res.json() : [];
+		loading = false;
+	}
+
+	async function addTeam() {
+		errorMsg = '';
+		const payload = {
+			name: newTeam.name,
+			description: newTeam.description,
+			emoji: newTeam.emoji
+		};
+		const res = await fetch(API_URL, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify(payload)
+		});
+		if (res.ok) {
+			await fetchTeams();
+			showAddTeam = false;
+			newTeam = { name: '', description: '', emoji: '' };
+		} else {
+			const error = await res.json();
+			errorMsg = typeof error === 'object' ? JSON.stringify(error) : error;
+			alert('Failed to add team: ' + errorMsg);
 		}
 	}
-	
-	function getLevelColor(level: number): string {
-		if (level >= 5) return 'text-purple-400';
-		if (level >= 3) return 'text-blue-400';
-		if (level >= 1) return 'text-green-400';
-		return 'text-slate-400';
+
+	async function deleteTeam(teamId: number) {
+		if (!confirm('Are you sure you want to delete this team?')) return;
+		const res = await fetch(`${API_URL}${teamId}/`, {
+			method: 'DELETE',
+			credentials: 'include'
+		});
+		if (res.ok || res.status === 204) {
+			await fetchTeams();
+		} else {
+			const err = await res.json();
+			alert('Failed to delete: ' + JSON.stringify(err));
+		}
 	}
+
+	function openMembers(team: Team) {
+		currentTeam = team;
+		showMembersModal = true;
+	}
+
+	async function addMember() {
+		if (!inputUserId || !currentTeam) return;
+		const user_id = Number(inputUserId);
+		const res = await fetch(`${API_URL}${currentTeam.id}/assign_member/`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify({ user_id })
+		});
+		if (res.ok) {
+			await fetchTeams();
+			inputUserId = '';
+			currentTeam = teams.find(t => t.id === currentTeam?.id) || null;
+		} else {
+			alert('Failed to add member');
+		}
+	}
+
+	async function removeMember(userId: number) {
+		if (!currentTeam) return;
+		const res = await fetch(`${API_URL}${currentTeam.id}/remove_member/`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify({ user_id: userId })
+		});
+		if (res.ok) {
+			await fetchTeams();
+			currentTeam = teams.find(t => t.id === currentTeam?.id) || null;
+		} else {
+			alert('Failed to remove member');
+		}
+	}
+
+	onMount(fetchTeams);
 </script>
 
 <svelte:head>
-	<title>Team - Zentry</title>
+	<title>Teams - Zentry</title>
 </svelte:head>
 
-<div class="space-y-6">
-	<!-- Header -->
-	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">
-				Team Leaderboard 👥
-			</h1>
-			<p class="text-slate-400 mt-1">See how your team is performing</p>
-		</div>
-		
-		<!-- Leaderboard Filter -->
-		<div class="flex items-center gap-2">
-			<label for="leaderboard-sort" class="text-slate-400 text-sm font-medium">Sort by:</label>
-			<select 
-				id="leaderboard-sort"
-				bind:value={selectedLeaderboard}
-				class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-purple-500 focus:outline-none"
-			>
-				{#each leaderboardTypes as type}
-					<option value={type.value}>{type.emoji} {type.label}</option>
-				{/each}
-			</select>
-		</div>
+<div class="space-y-8">
+	<div class="flex justify-between items-center mb-2">
+		<h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">Teams</h1>
+		<button on:click={() => showAddTeam = true} class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-5 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-teal-600">Add Team</button>
 	</div>
 
-	<!-- Team Stats Overview -->
-	<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-		<div class="bg-gradient-to-br from-purple-500/20 to-teal-500/20 rounded-xl p-6 border border-purple-500/30">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-purple-200 text-sm font-medium">Total Members</p>
-					<p class="text-3xl font-bold text-white">{teamMembers.length}</p>
-				</div>
-				<div class="text-4xl">👥</div>
-			</div>
-		</div>
-		
-		<div class="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl p-6 border border-green-500/30">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-green-200 text-sm font-medium">Total Tasks</p>
-					<p class="text-3xl font-bold text-white">{teamMembers.reduce((sum, member) => sum + member.tasks_completed, 0)}</p>
-				</div>
-				<div class="text-4xl">✅</div>
-			</div>
-		</div>
-		
-		<div class="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-xl p-6 border border-yellow-500/30">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-yellow-200 text-sm font-medium">Average Level</p>
-					<p class="text-3xl font-bold text-white">{Math.round(teamMembers.reduce((sum, member) => sum + member.level, 0) / teamMembers.length)}</p>
-				</div>
-				<div class="text-4xl">🌟</div>
-			</div>
-		</div>
-		
-		<div class="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-xl p-6 border border-red-500/30">
-			<div class="flex items-center justify-between">
-				<div>
-					<p class="text-red-200 text-sm font-medium">Best Streak</p>
-					<p class="text-3xl font-bold text-white">{Math.max(...teamMembers.map(member => member.current_streak))}</p>
-				</div>
-				<div class="text-4xl">🔥</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Leaderboard -->
-	<div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl border border-slate-600 overflow-hidden">
-		<div class="p-6 border-b border-slate-600">
-			<div class="flex items-center gap-3">
-				<span class="text-2xl">{leaderboardTypes.find(t => t.value === selectedLeaderboard)?.emoji}</span>
-				<h2 class="text-xl font-semibold text-white">
-					{leaderboardTypes.find(t => t.value === selectedLeaderboard)?.label} Leaderboard
-				</h2>
-			</div>
-		</div>
-		
-		<div class="space-y-1">
-			{#each sortedMembers as member, index}
-				<div class="flex items-center gap-4 p-4 hover:bg-slate-700/50 transition-colors {index === 0 ? 'bg-gradient-to-r from-yellow-500/10 to-transparent' : ''}">
-					<!-- Rank -->
-					<div class="flex items-center justify-center w-12 h-12 rounded-full {getRankColor(index + 1)} font-bold text-lg">
-						{getRankEmoji(index + 1)}
-					</div>
-					
-					<!-- Avatar & Name -->
-					<div class="flex items-center gap-3 flex-1">
-						<div class="text-3xl">{member.avatar}</div>
-						<div>
-							<h3 class="font-semibold text-white">{member.first_name} {member.last_name}</h3>
-							<p class="text-slate-400 text-sm">@{member.username}</p>
-						</div>
-					</div>
-					
-					<!-- Role -->
-					<div class="hidden md:block">
-						<span class="px-3 py-1 bg-slate-600 text-slate-300 rounded-full text-sm font-medium">
-							{member.role}
-						</span>
-					</div>
-					
-					<!-- Level -->
-					<div class="text-center">
-						<div class="text-lg font-bold {getLevelColor(member.level)}">Level {member.level}</div>
-						<div class="text-xs text-slate-400">{member.experience_points} XP</div>
-					</div>
-					
-					<!-- Current Metric -->
-					<div class="text-center min-w-[80px]">
-						<div class="text-2xl font-bold text-white">
-							{member[selectedLeaderboard as keyof TeamMember]}
-						</div>
-						<div class="text-xs text-slate-400">
-							{selectedLeaderboard === 'experience_points' ? 'XP' : 
-							 selectedLeaderboard === 'tasks_completed' ? 'tasks' :
-							 selectedLeaderboard === 'current_streak' ? 'days' : 'level'}
-						</div>
-					</div>
-					
-					<!-- Streak Indicator -->
-					<div class="flex items-center gap-1">
-						{#if member.current_streak > 0}
-							<span class="text-orange-400">🔥</span>
-							<span class="text-sm text-orange-300">{member.current_streak}</span>
-						{:else}
-							<span class="text-slate-500">💤</span>
+	{#if loading}
+		<div class="text-center text-slate-400 py-8">Loading teams…</div>
+	{:else if !teams.length}
+		<div class="text-center text-slate-400 py-8">No teams found.</div>
+	{:else}
+		<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+			{#each teams as team}
+				<div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600 flex flex-col space-y-3">
+					<div class="flex items-center gap-2">
+						<span class="text-3xl">{team.emoji || '👥'}</span>
+						<h2 class="text-xl font-semibold text-white">{team.name}</h2>
+						{#if currentUserId === team.owner}
+							<button 
+								on:click={() => deleteTeam(team.id)} 
+								class="ml-auto px-3 py-1 bg-red-700 text-white text-xs rounded hover:bg-red-800"
+							>
+								Delete
+							</button>
 						{/if}
+					</div>
+					<p class="text-slate-300">{team.description}</p>
+					<div class="flex flex-wrap gap-2 mt-2">
+						{#if team.project_members?.length}
+							{#each team.project_members as member}
+								<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-700 text-white text-xs gap-1">
+									<span class="text-lg">{member.avatar || '👤'}</span>
+									<span>{member.first_name} {member.last_name}</span>
+									{#if currentUserId === team.owner}
+										<button on:click={() => removeMember(member.id)} class="ml-2 px-1 rounded hover:bg-red-700/40 text-red-300 text-xs">&times;</button>
+									{/if}
+								</span>
+							{/each}
+						{:else}
+							<span class="text-slate-500 text-xs">No members</span>
+						{/if}
+					</div>
+					<div class="flex gap-2 mt-4">
+						<button on:click={() => openMembers(team)} class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm text-white">Manage Members</button>
 					</div>
 				</div>
 			{/each}
 		</div>
-	</div>
-
-	<!-- Team Achievements -->
-	<div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600">
-		<h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-			🏆 Team Achievements
-		</h2>
-		
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-			<div class="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg p-4 border border-yellow-500/30">
-				<div class="flex items-center gap-3">
-					<span class="text-2xl">🏆</span>
-					<div>
-						<h3 class="font-semibold text-white">Top Performer</h3>
-						<p class="text-yellow-300 text-sm">{sortedMembers[0]?.first_name} - {sortedMembers[0]?.experience_points} XP</p>
-					</div>
-				</div>
-			</div>
-			
-			<div class="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-lg p-4 border border-red-500/30">
-				<div class="flex items-center gap-3">
-					<span class="text-2xl">🔥</span>
-					<div>
-						<h3 class="font-semibold text-white">Streak Master</h3>
-						<p class="text-red-300 text-sm">
-							{teamMembers.reduce((max, member) => 
-								member.current_streak > max.current_streak ? member : max
-							).first_name} - {Math.max(...teamMembers.map(m => m.current_streak))} days
-						</p>
-					</div>
-				</div>
-			</div>
-			
-			<div class="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg p-4 border border-green-500/30">
-				<div class="flex items-center gap-3">
-					<span class="text-2xl">⚡</span>
-					<div>
-						<h3 class="font-semibold text-white">Task Champion</h3>
-						<p class="text-green-300 text-sm">
-							{teamMembers.reduce((max, member) => 
-								member.tasks_completed > max.tasks_completed ? member : max
-							).first_name} - {Math.max(...teamMembers.map(m => m.tasks_completed))} tasks
-						</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Team Motivation -->
-	<div class="bg-gradient-to-br from-purple-500/10 to-teal-500/10 rounded-xl p-6 border border-purple-500/30">
-		<div class="flex items-center gap-3 mb-4">
-			<div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-teal-500 rounded-full flex items-center justify-center text-2xl">
-				🤖
-			</div>
-			<div>
-				<h2 class="text-xl font-semibold text-white">Team Motivation</h2>
-				<p class="text-slate-400 text-sm">Zenturion's team insights</p>
-			</div>
-		</div>
-		
-		<div class="bg-slate-800/50 rounded-lg p-4">
-			<p class="text-slate-300 italic">
-				"Great team dynamics! 🚀 Mike is crushing it with a 7-day streak - maybe he can mentor others? 
-				Sarah's design work is top-notch, and Alex is making steady progress. 
-				Remember to celebrate small wins together! 🎉"
-			</p>
-		</div>
-	</div>
+	{/if}
 </div>
+
+{#if showAddTeam}
+	<div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" tabindex="0" aria-modal="true" on:click={() => showAddTeam = false}>
+		<div class="bg-gradient-to-br from-slate-800 to-slate-700 p-6 rounded-xl border border-slate-600 w-full max-w-md mx-4" on:click|stopPropagation>
+			<h2 class="text-xl font-bold text-white mb-4">Add Team</h2>
+			<form on:submit|preventDefault={addTeam} class="space-y-4">
+				<div>
+					<label class="block text-slate-300 mb-1">Name</label>
+					<input class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" bind:value={newTeam.name} required>
+				</div>
+				<div>
+					<label class="block text-slate-300 mb-1">Description</label>
+					<textarea class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" rows="2" bind:value={newTeam.description}></textarea>
+				</div>
+				<div>
+					<label class="block text-slate-300 mb-1">Emoji</label>
+					<input class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" bind:value={newTeam.emoji} maxlength="2">
+				</div>
+				{#if errorMsg}
+					<div class="text-red-400 text-xs">{errorMsg}</div>
+				{/if}
+				<div class="flex justify-end gap-3">
+					<button type="button" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg" on:click={() => showAddTeam = false}>Cancel</button>
+					<button type="submit" class="px-4 py-2 bg-gradient-to-r from-purple-500 to-teal-500 text-white rounded-lg">Add</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
+
+{#if showMembersModal && currentTeam}
+	<div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" tabindex="0" aria-modal="true" on:click={() => showMembersModal = false}>
+		<div class="bg-gradient-to-br from-slate-800 to-slate-700 p-6 rounded-xl border border-slate-600 w-full max-w-md mx-4" on:click|stopPropagation>
+			<h2 class="text-xl font-bold text-white mb-4">Manage Members for {currentTeam.name}</h2>
+			{#if currentUserId === currentTeam.owner}
+			<div>
+				<label class="block text-slate-300 mb-1">User ID</label>
+				<input
+					type="number"
+					class="w-full mb-4 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+					bind:value={inputUserId}
+					placeholder="Enter user ID to add"
+					min="1"
+				/>
+				<button class="bg-gradient-to-r from-purple-500 to-teal-500 text-white px-4 py-2 rounded-lg" on:click={addMember} disabled={!inputUserId}>Add Member</button>
+			</div>
+			{/if}
+			<div class="mt-6">
+				<h3 class="text-slate-300 text-sm mb-2">Current Members:</h3>
+				{#if currentTeam.project_members?.length}
+					<ul>
+						{#each currentTeam.project_members as member}
+							<li class="flex items-center gap-2 text-white mb-1">
+								<span class="text-lg">{member.avatar || '👤'}</span>
+								<span>{member.first_name} {member.last_name} (@{member.username})</span>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="text-slate-500 text-xs">No members yet</p>
+				{/if}
+			</div>
+			<div class="flex justify-end mt-6">
+				<button class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg" on:click={() => showMembersModal = false}>Close</button>
+			</div>
+		</div>
+	</div>
+{/if}
