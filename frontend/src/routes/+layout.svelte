@@ -10,7 +10,6 @@
   }
   $: isAuthPage = $page.url.pathname === '/login' || $page.url.pathname === '/register';
 
-  // 👇 CLIENT-SIDE AUTH GUARD: Always check if cookie exists on nav!
   function getCookie(name: string) {
     return document.cookie
       .split('; ')
@@ -19,7 +18,6 @@
   }
 
   onMount(() => {
-    // Don't run on login or register
     if (!$page.url.pathname.startsWith('/login') && !$page.url.pathname.startsWith('/register')) {
       const accessToken = getCookie('access_token');
       if (!accessToken) {

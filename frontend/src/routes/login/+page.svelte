@@ -14,13 +14,12 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        credentials: 'include' // Important for cookies!
+        credentials: 'include'
       });
       const data = await res.json();
       if (!res.ok) {
         error = data.detail || 'Invalid credentials';
       } else if (data.access) {
-        // Cookie is set by backend; no need for localStorage
         window.location.href = '/';
       } else {
         error = 'Unexpected response from server';

@@ -23,7 +23,6 @@
         const data = await res.json();
         error = data.detail || 'Registration failed';
       } else {
-        // handle successful registration (e.g., redirect)
         window.location.href = '/login';
       }
     } catch {

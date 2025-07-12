@@ -62,7 +62,6 @@
 		is_active: true
 	};
 	
-	// Form data for creating new webhook
 	let newWebhook: {
 		name: string;
 		webhook_type: string;
@@ -74,7 +73,7 @@
 		name: '',
 		webhook_type: 'discord',
 		webhook_url: '',
-		project: 1, // Default to first project
+		project: 1,
 		event_types: [],
 		is_active: true
 	};
@@ -116,7 +115,6 @@
 				}));
 			} else {
 				console.error('Failed to load webhook integrations:', response.status);
-				// Fall back to mock data for now
 				webhookIntegrations = [
 					{
 						id: 1,
@@ -144,7 +142,6 @@
 			}
 		} catch (error) {
 			console.error('Error loading webhook integrations:', error);
-			// Fall back to mock data
 			webhookIntegrations = [
 				{
 					id: 1,
@@ -191,7 +188,6 @@
 				}));
 			} else {
 				console.error('Failed to load notification logs:', response.status);
-				// Fall back to mock data
 				notificationLogs = [
 					{
 						id: 1,
@@ -227,7 +223,6 @@
 			}
 		} catch (error) {
 			console.error('Error loading notification logs:', error);
-			// Fall back to mock data
 			notificationLogs = [
 				{
 					id: 1,
@@ -269,7 +264,6 @@
 			return;
 		}
 		
-		// Validate webhook URL
 		const urlValidation = validateWebhookUrl(newWebhook.webhook_url, newWebhook.webhook_type);
 		if (!urlValidation.isValid) {
 			alert(urlValidation.error);
@@ -289,10 +283,8 @@
 			});
 			
 			if (response.ok) {
-				// Reload webhook integrations to show the new one
 				await loadWebhookIntegrations();
 				
-				// Reset form
 				newWebhook = {
 					name: '',
 					webhook_type: 'discord',
@@ -325,7 +317,6 @@
 				throw new Error('Webhook not found');
 			}
 			
-			// Use Django API to test webhook
 			const response = await api.post(`/api/notifications/webhook-integrations/${webhookId}/test/`, {
 				test_message: `🧪 Test notification from Zentry!\n\nThis is a test message for ${webhook.name}.\n\nIf you see this message, your webhook integration is working correctly! 🎉`
 			});
@@ -333,7 +324,6 @@
 			if (response.ok) {
 				const data = await response.json();
 				
-				// Reload logs to show the new test entry
 				await loadNotificationLogs();
 				
 				alert('✅ Test notification sent successfully! Check your Discord/Teams channel and the notification logs below.');
@@ -387,14 +377,12 @@
 			return;
 		}
 		
-		// Get the webhook being edited to determine its type
 		const webhook = webhookIntegrations.find(w => w.id === editingWebhook);
 		if (!webhook) {
 			alert('Webhook not found');
 			return;
 		}
 		
-		// Validate webhook URL
 		const validation = validateWebhookUrl(editWebhookData.webhook_url, webhook.webhook_type);
 		if (!validation.isValid) {
 			alert(`Invalid webhook URL: ${validation.error}`);
@@ -406,15 +394,14 @@
 		try {
 			const response = await api.put(`/api/notifications/webhook-integrations/${editingWebhook}/`, {
 				name: editWebhookData.name.trim(),
-				webhook_type: webhook.webhook_type, // Keep original type
+				webhook_type: webhook.webhook_type,
 				webhook_url: editWebhookData.webhook_url.trim(),
-				project: webhook.project || 1, // Keep original project
+				project: webhook.project || 1,
 				event_types: editWebhookData.event_types,
 				is_active: editWebhookData.is_active
 			});
 			
 			if (response.ok) {
-				// Reload webhook integrations to show the updated one
 				await loadWebhookIntegrations();
 				cancelEditWebhook();
 				alert('✅ Webhook integration updated successfully!');
@@ -465,21 +452,18 @@
 	}
 	
 	function validateWebhookUrl(url: string, type: string): { isValid: boolean; error?: string } {
-		// Remove whitespace
 		url = url.trim();
 		
 		if (!url) {
 			return { isValid: false, error: 'Webhook URL is required' };
 		}
 		
-		// Basic URL validation
 		try {
 			new URL(url);
 		} catch {
 			return { isValid: false, error: 'Invalid URL format' };
 		}
 		
-		// Type-specific validation
 		if (type === 'discord') {
 			if (!url.includes('discord.com/api/webhooks/')) {
 				return { isValid: false, error: 'Invalid Discord webhook URL format' };
@@ -505,7 +489,6 @@
 </svelte:head>
 
 <div class="space-y-6">
-	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">
