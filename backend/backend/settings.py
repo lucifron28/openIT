@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'users',
     'projects',
+    'gamification',
 ]
 
 MIDDLEWARE = [

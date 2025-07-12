@@ -58,6 +58,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
         
         return Response(stats)
 
+    @action(detail=True, methods=['post'])
+    def assign_member(self, request, pk=None):
+        """Assign a user to the project"""
+        project = self.get_object()
+        user_id = request.data.get('user_id')
+        
+        if not user_id:
+            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from users.models import User
+            user = User.objects.get(id=user_id)
+            project.assign_member(user)
+            return Response({'message': f'User {user.username} assigned to project {project.name}'})
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
