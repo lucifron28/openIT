@@ -94,13 +94,14 @@
 	}
 
 	function canEditTask(task: any) {
-		if (!task.assigned_to) {
-			return true;
-		}
+		const assignedId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
+		const createdId = typeof task.created_by === 'object' ? task.created_by?.id : task.created_by;
+		const projectOwnerId = typeof project?.owner === 'object' ? project?.owner?.id : project?.owner;
 		return (
-			(task.assigned_to?.id === currentUser?.id) ||
-			(task.created_by === currentUser?.id) ||
-			(project?.owner && project.owner === currentUser?.id)
+			!assignedId ||
+			assignedId === currentUser?.id ||
+			createdId === currentUser?.id ||
+			projectOwnerId === currentUser?.id
 		);
 	}
 

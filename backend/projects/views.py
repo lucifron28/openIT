@@ -5,7 +5,7 @@ from django.db import transaction, models
 from django.utils import timezone
 from .models import Project, Task
 from .serializers import (
-    ProjectSerializer, TaskSerializer, 
+    ProjectSerializer, TaskSerializer,
     TaskCreateSerializer, TaskUpdateSerializer
 )
 from users.models import User
@@ -116,10 +116,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         return Task.objects.filter(
-            models.Q(project__owner=user) | 
+            models.Q(project__owner=user) |
             models.Q(project__project_members=user)
         ).distinct().select_related('project', 'assigned_to', 'created_by')
-
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -131,10 +130,33 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def _can_edit_task(self, task, user):
+        if task.project.owner == user or task.created_by == user:
+            return True
+        if task.assigned_to is None and user in task.project.project_members.all():
+            return True
+        if task.assigned_to and task.assigned_to == user:
+            return True
+        return False
+
+    def update(self, request, *args, **kwargs):
+        task = self.get_object()
+        user = request.user
+        if not self._can_edit_task(task, user):
+            return Response({'error': 'You do not have permission to edit this task'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        task = self.get_object()
+        user = request.user
+        if not self._can_edit_task(task, user):
+            return Response({'error': 'You do not have permission to edit this task'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         task = self.get_object()
-        if task.assigned_to != request.user and task.created_by != request.user:
+        if not self._can_edit_task(task, request.user):
             return Response({'error': 'You do not have permission to complete this task'},
                             status=status.HTTP_403_FORBIDDEN)
         with transaction.atomic():
@@ -174,7 +196,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def assign(self, request, pk=None):
         task = self.get_object()
-        if task.created_by != request.user and task.project.owner != request.user:
+        if not self._can_edit_task(task, request.user):
             return Response({'error': 'You do not have permission to assign this task'},
                             status=status.HTTP_403_FORBIDDEN)
         user_id = request.data.get('user_id')
