@@ -187,7 +187,7 @@ class WebhookConfig(models.Model):
     
     name = models.CharField(max_length=100)
     platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
-    webhook_url = models.URLField()
+    webhook_url = models.URLField(max_length=500)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='webhooks', null=True, blank=True)
     
     # Event triggers

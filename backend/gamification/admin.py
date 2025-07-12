@@ -17,7 +17,6 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = ['name', 'category', 'administrator', 'is_active', 'member_count', 'created_at']
     list_filter = ['category', 'is_active', 'is_public', 'created_at']
     search_fields = ['name', 'description', 'administrator__username']
-    filter_horizontal = ['members']
     
     def member_count(self, obj):
         return obj.get_member_count()
